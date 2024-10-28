@@ -19,6 +19,8 @@ class Women(models.Model):
     is_published = models.BooleanField(choices=Status.choices, default=Status.DRAFT)
     cat = models.ForeignKey('Category', on_delete=models.PROTECT, related_name='posts') #'posts' это алиас для women_set - вторичной модели
     #Класс 'Category' указан в виде строки т.к. в виде ссылки его еще может не существовать, н, вообще, если б был создан заранее, то можно передать через ссылку. PTOTECT -это ФУНКЦИЯ!
+    tags = models.ManyToManyField('TagPost', blank=True, related_name='tags') #on_delete в этом классе отсутствует
+
 
     objects = models.Manager() #старый дефолтный менеджер менеджер, существует без объявления класса
     published = PublishedModel() #новый менеджер
@@ -40,3 +42,14 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TagPost(models.Model):
+    tag = models.CharField(max_length=100, db_index=True)
+    slug = models.SlugField(max_length=255, unique=True, db_index=True)
+
+    def get_absolute_url(self):
+        return reverse('tag', kwargs={'tag_slug': self.slug})
+
+    def __str__(self):
+        return self.tag

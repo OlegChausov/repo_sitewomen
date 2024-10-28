@@ -19,7 +19,8 @@ urlpatterns = [
     path('post/<int:post_id>/', views.show_post, name='post'), # маршрут с показом статей
     path('post/<slug:post_slug>/', views.show_post, name='post'),
     #path('cats/<int:cat_id>/', views.show_category, name='category'), категории по номерам
-    path('cats/<slug:cat_slug>/', views.show_category, name='category')
+    path('cats/<slug:cat_slug>/', views.show_category, name='category'),
+    path('tag/<slug:tag_slug>/', views.show_tag_postlist, name='tag')
 
 
 ]
