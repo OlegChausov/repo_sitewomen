@@ -9,19 +9,12 @@ menu = [{'title': "О сайте", 'url_name': 'about'},
         {'title': "Обратная связь", 'url_name': 'contact'},
         {'title': "Войти", 'url_name': 'login'}
 ]
-data_db = [
-    {'id': 1, 'title': 'Анджелина Джоли', 'content': '''<p>Анджелина Джоли</p> (англ. Angelina Jolie[7], при рождении Войт (англ. Voight), ранее Джоли Питт (англ. Jolie Pitt); род. 4 июня 1975, Лос-Анджелес, Калифорния, США) — американская актриса кино, телевидения и озвучивания, кинорежиссёр, сценаристка, продюсер, фотомодель, посол доброй воли ООН.
-
-Обладательница премии «Оскар», трёх премий «Золотой глобус» (первая актриса в истории, три года подряд выигравшая премию) и двух «Премий Гильдии киноактёров США».''',
-     'is_published': True},
-    {'id': 2, 'title': 'Марго Робби', 'content': 'Биография Марго Робби', 'is_published': False},
-    {'id': 3, 'title': 'Джулия Робертс', 'content': 'Биография Джулия Робертс', 'is_published': True},
-]
 
 
 def index(request):
     # posts = Women.objects.filter(is_published=1) это со старым дефолтным менеджером
-    posts = Women.published.all()# all вместо filter потому, что этот менеджер возвращает только те записи, которые нужны, фильтровать не нужно
+    #posts = Women.published.all()# all вместо filter потому, что этот менеджер возвращает только те записи, которые нужны, фильтровать не нужно
+    posts = Women.published.all().select_related('cat') #select_related('cat') это метод жадной загрузки объектов из модели women, связанное с модель 'Category' поле 'cat'
 
     data = {
         'title': 'Главная страница',
@@ -82,7 +75,8 @@ def login(request):
 
 def show_category(request, cat_slug):
     category = get_object_or_404(Category, slug=cat_slug) #ищем по модели Category, поле slug, 404 поднимается, если не найдено. Потом ту строчку (объект), что нашли возрващаем в posts = Women.published.filter(cat_id=category.pk) с атрибутом pk
-    posts = Women.published.filter(cat_id=category.pk)
+    #posts = Women.published.filter(cat_id=category.pk)
+    posts = Women.published.filter(cat_id=category.pk).select_related('cat') #select_related('cat') это метод жадной загрузки объектов из модели women, связанное с модель 'Category' поле 'cat'
     data = {
         'title': f'Рубрика: {category.name}',
         'menu': menu,
@@ -95,7 +89,8 @@ def show_category(request, cat_slug):
 
 def show_tag_postlist(request, tag_slug):
     tag = get_object_or_404(TagPost, slug=tag_slug)#возвращает объект tag из модели TagPos по слагу если она есть, или 404
-    posts = tag.tags.filter(is_published=Women.Status.PUBLISHED)# объект tag, через менеджер из методов объекта (related name) 'tags' ищем в модели posts нужные объекты post
+    #posts = tag.tags.filter(is_published=Women.Status.PUBLISHED)# объект tag, через менеджер из методов объекта (related name) 'tags' ищем в модели posts нужные объекты post. Жадно загружаем все связанные с опубликованными постами данные из таблицы Category
+    posts = tag.tags.filter(is_published=Women.Status.PUBLISHED).select_related('cat')  # select_related('cat') это метод жадной загрузки объектов из модели women, связанное с модель 'Category' поле 'cat'
     data = {
         'title': f'Тег: {tag.tag}',
         'menu': menu,
