@@ -1,11 +1,11 @@
 from django.http import HttpResponse, HttpResponseNotFound, Http404, HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.template.loader import render_to_string
 import uuid
 
 from django.views import View
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView, ListView, DetailView, FormView
 
 from .forms import AddPostForm, UploadFileForm
 from .models import Women, Category, TagPost, UploadFiles
@@ -62,16 +62,35 @@ class WomenHome(ListView):
 #     #     context['cat_selected'] = int(self.request.GET.get('cat_id', 0)) #добавляем динамически данные, которые мы ловим на лету из get запроса
 #     #     return context
 
-def show_post(request, post_slug):
-    post = get_object_or_404(Women, slug=post_slug)
-    data = {
-        'title': post.title,
-        'menu': menu,
-        'post': post,
-        'cat_selected': 1,
-    }
+# def show_post(request, post_slug):
+#     post = get_object_or_404(Women, slug=post_slug)
+#     data = {
+#         'title': post.title,
+#         'menu': menu,
+#         'post': post,
+#         'cat_selected': 1,
+#     }
+#
+#     return render(request, 'women/post.html', context=data)
 
-    return render(request, 'women/post.html', context=data)
+class ShowPost(DetailView):
+    #model = Women
+    template_name = 'women/post.html'
+    slug_url_kwarg = 'post_slug' #указываем переменную как в маршруте - post_slug
+    context_object_name = 'post'# по умолчанию в шаблон передается переменная object, но мы ее переназовем так, как указано в шаблоне
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = context['post']
+        context['menu'] = menu
+        return context
+
+    def get_object(self, queryset=None):# определяем, какой объект нам нельзя брать, а вместо него 404, тогда model = Women не пишем,
+        return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg]) #здесть передали не модель с фильтром, а МЕНЕДЖЕР, как объект
+
+
+
+
 
 
 def handle_uploaded_file(f):
@@ -150,30 +169,41 @@ def page_not_found(request, exception):
 #     return render(request, 'women/addpage.html', {'menu': menu, 'title': 'Добавление статьи', 'form': form})
 
 
-class AddPage(View):
-
-    def get(self, request):
-
-        form = AddPostForm()
-        data = {'title': 'Главная страница', 'menu': menu, 'form': form}
-        return render(request, 'women/addpage.html', data)
-
-    def post(self, request):
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-
-        data = {'title': 'Главная страница', 'menu': menu, 'form': form}
-
-        return render(request, 'women/addpage.html', data)
-
+# class AddPage(View):
+#
+#     def get(self, request):
+#
+#         form = AddPostForm()
+#         data = {'title': 'Главная страница', 'menu': menu, 'form': form}
+#         return render(request, 'women/addpage.html', data)
+#
+#     def post(self, request):
+#         form = AddPostForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('home')
+#
+#         data = {'title': 'Главная страница', 'menu': menu, 'form': form}
+#
+#         return render(request, 'women/addpage.html', data)
+#
 def contact(request):
     return HttpResponse("Обратная связь")
 
 def login(request):
     return HttpResponse("Авторизация")
 
+class AddPage(FormView):
+    form_class = AddPostForm #класс, как объект, без инициализации, ничего не создаем
+    template_name = 'women/addpage.html' #передаваяемая переменная в шаблон автоматом называется form
+    success_url = reverse_lazy('home') #лениво, почти асинхронно, определяет маршрут только при работе объекта класса AddPage(FormView)
+    extra_context = {
+        'menu': menu,
+        'title': 'Добавление статьи'}
+
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
 
 # def show_category(request, cat_slug):
 #     category = get_object_or_404(Category, slug=cat_slug) #ищем по модели Category, поле slug, 404 поднимается, если не найдено. Потом ту строчку (объект), что нашли возрващаем в posts = Women.published.filter(cat_id=category.pk) с атрибутом pk
@@ -189,9 +219,12 @@ def login(request):
 #     return render(request, 'women/index.html', context=data)
 
 class WomenCategory(ListView):
+    #model = Women в этом случае get_queryset не используем, а работаем с моделью целиком
     template_name = 'women/index.html'
     context_object_name = 'posts'
     allow_empty = False #при пустом кверисете context_object_name = 'posts' --> (Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related('cat')) вернется 404
+    #extra_context = {еще переменные в модель}
+
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -205,16 +238,45 @@ class WomenCategory(ListView):
         return Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related('cat') #self.kwargs['cat_slug'] - это переменная, определенная в соответствующем маршруте women\urls.py
 
 
-def show_tag_postlist(request, tag_slug):
-    tag = get_object_or_404(TagPost, slug=tag_slug)#возвращает объект tag из модели TagPos по слагу если она есть, или 404
-    #posts = tag.tags.filter(is_published=Women.Status.PUBLISHED)# объект tag, через менеджер из методов объекта (related name) 'tags' ищем в модели posts нужные объекты post. Жадно загружаем все связанные с опубликованными постами данные из таблицы Category
-    posts = tag.tags.filter(is_published=Women.Status.PUBLISHED).select_related('cat')  # select_related('cat') это метод жадной загрузки объектов из модели women, связанное с модель 'Category' поле 'cat'
-    data = {
-        'title': f'Тег: {tag.tag}',
-        'menu': menu,
-        'posts': posts,
-        'cat_selected': None,
-    }
+# def show_tag_postlist(request, tag_slug):
+#     tag = get_object_or_404(TagPost, slug=tag_slug)#возвращает объект tag из модели TagPos по слагу если она есть, или 404
+#     #posts = tag.tags.filter(is_published=Women.Status.PUBLISHED)# объект tag, через менеджер из методов объекта (related name) 'tags' ищем в модели posts нужные объекты post. Жадно загружаем все связанные с опубликованными постами данные из таблицы Category
+#     posts = tag.tags.filter(is_published=Women.Status.PUBLISHED).select_related('cat')  # select_related('cat') это метод жадной загрузки объектов из модели women, связанное с модель 'Category' поле 'cat'
+#     data = {
+#         'title': f'Тег: {tag.tag}',
+#         'menu': menu,
+#         'posts': posts,
+#         'cat_selected': None,
+#     }
+#
+#     return render(request, 'women/index.html', context=data)
 
-    return render(request, 'women/index.html', context=data)
+class TagPostList(ListView):
+    template_name = 'women/index.html'
+    context_object_name = 'posts'
+    allow_empty = False
+
+    def get_queryset(self):
+        return Women.published.filter(tags__slug=self.kwargs['tag_slug']).select_related('cat')
+
+    # def get_context_data(self, *, object_list=None, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     cat = context['posts'][0].cat
+    #     context['title'] = 'Категория - ' + cat.name
+    #     context['menu'] = menu
+    #     context['cat_selected'] = cat.id
+    #     return context
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        my_tag = context['posts'][0].tags.filter(slug=self.kwargs['tag_slug'])[0]
+        context['title'] = 'Тег: ' + my_tag.tag
+        context['menu'] = menu
+        return context
+
+
+
+
+
+
 
