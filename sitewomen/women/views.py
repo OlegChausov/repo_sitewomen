@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 import uuid
 
 from django.views import View
-from django.views.generic import TemplateView, ListView, DetailView, FormView
+from django.views.generic import TemplateView, ListView, DetailView, FormView, CreateView, UpdateView
 
 from .forms import AddPostForm, UploadFileForm
 from .models import Women, Category, TagPost, UploadFiles
@@ -193,17 +193,37 @@ def contact(request):
 def login(request):
     return HttpResponse("Авторизация")
 
-class AddPage(FormView):
-    form_class = AddPostForm #класс, как объект, без инициализации, ничего не создаем
-    template_name = 'women/addpage.html' #передаваяемая переменная в шаблон автоматом называется form
-    success_url = reverse_lazy('home') #лениво, почти асинхронно, определяет маршрут только при работе объекта класса AddPage(FormView)
+# class AddPage(FormView):
+#     form_class = AddPostForm #класс, как объект, без инициализации, ничего не создаем
+#     template_name = 'women/addpage.html' #передаваяемая переменная в шаблон автоматом называется form
+#     success_url = reverse_lazy('home') #лениво, почти асинхронно, определяет маршрут только при работе объекта класса AddPage(FormView)
+#     extra_context = {
+#         'menu': menu,
+#         'title': 'Добавление статьи'}
+#
+#     def form_valid(self, form):
+#         form.save()
+#         return super().form_valid(form)
+
+class AddPage(CreateView): #     def form_valid(self, form): form.save() return super().form_valid(form) уже реализован в этом классе!
+    form_class = AddPostForm # можно так, а можнно и так:
+    #model = Women #альтернатива form_class = AddPostForm
+    #fields = '__all__' #альтернатива form_class = AddPostForm
+    #fields = ['title', 'slug', 'content', 'is_published', 'cat'] #альтернатива form_class = AddPostForm, только не __all__, а явно указанные, все обязательные поля должны быть!
+    template_name = 'women/addpage.html'
+    #success_url = reverse_lazy('home') можно не указывать, тогда выкинет на страницу def get_absolute_url(self): return reverse('post', kwargs={'post_slug': self.slug})
     extra_context = {
         'menu': menu,
         'title': 'Добавление статьи'}
 
-    def form_valid(self, form):
-        form.save()
-        return super().form_valid(form)
+class UpdatePage(UpdateView):
+    model = Women
+    fields = ['title', 'content', 'photo', 'is_published', 'cat']
+    template_name = 'women/addpage.html'
+    success_url = reverse_lazy('home')
+    extra_context = {
+        'menu': menu,
+        'title': 'Редактирование статьи'}
 
 # def show_category(request, cat_slug):
 #     category = get_object_or_404(Category, slug=cat_slug) #ищем по модели Category, поле slug, 404 поднимается, если не найдено. Потом ту строчку (объект), что нашли возрващаем в posts = Women.published.filter(cat_id=category.pk) с атрибутом pk
