@@ -9,12 +9,14 @@ from django.views.generic import TemplateView, ListView, DetailView, FormView, C
 
 from .forms import AddPostForm, UploadFileForm
 from .models import Women, Category, TagPost, UploadFiles
+from .utils import DataMixin
 
-menu = [{'title': "О сайте", 'url_name': 'about'},
-        {'title': "Добавить статью", 'url_name': 'add_page'},
-        {'title': "Обратная связь", 'url_name': 'contact'},
-        {'title': "Войти", 'url_name': 'login'}
-]
+
+# menu = [{'title': "О сайте", 'url_name': 'about'},
+#         {'title': "Добавить статью", 'url_name': 'add_page'},
+#         {'title': "Обратная связь", 'url_name': 'contact'},
+#         {'title': "Войти", 'url_name': 'login'}
+# ]
 
 
 # def index(request):
@@ -31,18 +33,30 @@ menu = [{'title': "О сайте", 'url_name': 'about'},
 #     return render(request, 'women/index.html', context=data)
 #     #return HttpResponse(render_to_string('women/index.html')) альтернативный вариаент
 
-class WomenHome(ListView):
-    model = Women
-    template_name = 'women/index.html' #по умолчанию вызывается шаблон <имя приложения>/<имя модели>_list.html наш шаблон другой,  то его можно так переопределить
-    context_object_name = 'posts'  #по умолчанию в шаблон передается коллекция object_list (обычно квирисет из модели), но ее можно так переопределить, переназвать
-    extra_context = {
-        'title': 'Главная страница',
-        'menu': menu,
-        'cat_selected': 0,
-    }#extra_context не умеет ловить данные динамически (GET)
+# class WomenHome(ListView): #без миксина
+#     model = Women
+#     template_name = 'women/index.html' #по умолчанию вызывается шаблон <имя приложения>/<имя модели>_list.html наш шаблон другой,  то его можно так переопределить
+#     context_object_name = 'posts'  #по умолчанию в шаблон передается коллекция object_list (обычно квирисет из модели), но ее можно так переопределить, переназвать
+#     extra_context = {
+#         'title': 'Главная страница',
+#         'menu': menu,
+#         'cat_selected': 0,
+#     }#extra_context не умеет ловить данные динамически (GET)
+#
+#     def get_queryset(self):
+#         return Women.published.all().select_related('cat') #переопределяем выборку (queryset) для переменной context_object_name/'posts'
+
+class WomenHome(DataMixin, ListView): #с миксином
+    template_name = 'women/index.html'
+    context_object_name = 'posts'
+    title_page = 'Главная страница'
+    cat_selected = 0
 
     def get_queryset(self):
-        return Women.published.all().select_related('cat') #переопределяем выборку (queryset) для переменной context_object_name/'posts'
+        return Women.published.all().select_related('cat')
+
+
+
 
 # class WomenHome(TemplateView):
 #     template_name = 'women/index.html'
@@ -73,21 +87,30 @@ class WomenHome(ListView):
 #
 #     return render(request, 'women/post.html', context=data)
 
-class ShowPost(DetailView):
-    #model = Women
+# class ShowPost(DetailView): без миксина
+#     #model = Women
+#     template_name = 'women/post.html'
+#     slug_url_kwarg = 'post_slug' #указываем переменную как в маршруте - post_slug
+#     context_object_name = 'post'# по умолчанию в шаблон передается переменная object, но мы ее переназовем так, как указано в шаблоне
+#
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['title'] = context['post']
+#         context['menu'] = menu
+#         return context
+#
+#     def get_object(self, queryset=None):# определяем, какой объект нам нельзя брать, а вместо него 404, тогда model = Women не пишем,
+#         return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg]) #здесть передали не модель с фильтром, а МЕНЕДЖЕР, как объект
+
+class ShowPost(DataMixin, DetailView): #с миксином
     template_name = 'women/post.html'
-    slug_url_kwarg = 'post_slug' #указываем переменную как в маршруте - post_slug
-    context_object_name = 'post'# по умолчанию в шаблон передается переменная object, но мы ее переназовем так, как указано в шаблоне
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = context['post']
-        context['menu'] = menu
-        return context
-
-    def get_object(self, queryset=None):# определяем, какой объект нам нельзя брать, а вместо него 404, тогда model = Women не пишем,
-        return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg]) #здесть передали не модель с фильтром, а МЕНЕДЖЕР, как объект
-
+    def get_context_data(self, *, object_list=None, **kwargs):
+        return self.get_mixin_context(super().get_context_data(**kwargs),
+                                      title='Главная страница',
+                                      cat_selected=0)
 
 
 
@@ -125,7 +148,7 @@ def about(request):
     else:
         form = UploadFileForm()
 
-    return render(request, 'women/about.html', {'title': 'О сайте', 'menu': menu, 'form': form})
+    return render(request, 'women/about.html', {'title': 'О сайте', 'form': form})
 
 #def categories(request, cat_id): #HttpRequest
 #    return HttpResponse(f"<h1>Статьи по категориям</h1><p>id: {cat_id}</p>")
@@ -205,25 +228,42 @@ def login(request):
 #         form.save()
 #         return super().form_valid(form)
 
-class AddPage(CreateView): #     def form_valid(self, form): form.save() return super().form_valid(form) уже реализован в этом классе!
-    form_class = AddPostForm # можно так, а можнно и так:
-    #model = Women #альтернатива form_class = AddPostForm
-    #fields = '__all__' #альтернатива form_class = AddPostForm
-    #fields = ['title', 'slug', 'content', 'is_published', 'cat'] #альтернатива form_class = AddPostForm, только не __all__, а явно указанные, все обязательные поля должны быть!
-    template_name = 'women/addpage.html'
-    #success_url = reverse_lazy('home') можно не указывать, тогда выкинет на страницу def get_absolute_url(self): return reverse('post', kwargs={'post_slug': self.slug})
-    extra_context = {
-        'menu': menu,
-        'title': 'Добавление статьи'}
+#без миксина
+# class AddPage(CreateView): #     def form_valid(self, form): form.save() return super().form_valid(form) уже реализован в этом классе!
+#     form_class = AddPostForm # можно так, а можнно и так:
+#     #model = Women #альтернатива form_class = AddPostForm
+#     #fields = '__all__' #альтернатива form_class = AddPostForm
+#     #fields = ['title', 'slug', 'content', 'is_published', 'cat'] #альтернатива form_class = AddPostForm, только не __all__, а явно указанные, все обязательные поля должны быть!
+#     template_name = 'women/addpage.html'
+#     #success_url = reverse_lazy('home') можно не указывать, тогда выкинет на страницу def get_absolute_url(self): return reverse('post', kwargs={'post_slug': self.slug})
+#     extra_context = {
+#         'menu': menu,
+#         'title': 'Добавление статьи'}
 
-class UpdatePage(UpdateView):
+class AddPage(DataMixin, CreateView):#с миксином
+    model = Women
+    fields = ['title', 'slug', 'content', 'is_published', 'cat']
+    # form_class = AddPostForm
+    template_name = 'women/addpage.html'
+    success_url = reverse_lazy('home')
+    title_page = 'Добавление статьи'
+
+
+# class UpdatePage(UpdateView): #без миксина
+#     model = Women
+#     fields = ['title', 'content', 'photo', 'is_published', 'cat']
+#     template_name = 'women/addpage.html'
+#     success_url = reverse_lazy('home')
+#     extra_context = {
+#         'menu': menu,
+#         'title': 'Редактирование статьи'}
+
+class UpdatePage(DataMixin, UpdateView):#с миксином
     model = Women
     fields = ['title', 'content', 'photo', 'is_published', 'cat']
     template_name = 'women/addpage.html'
     success_url = reverse_lazy('home')
-    extra_context = {
-        'menu': menu,
-        'title': 'Редактирование статьи'}
+    title_page = 'Редактирование статьи'
 
 # def show_category(request, cat_slug):
 #     category = get_object_or_404(Category, slug=cat_slug) #ищем по модели Category, поле slug, 404 поднимается, если не найдено. Потом ту строчку (объект), что нашли возрващаем в posts = Women.published.filter(cat_id=category.pk) с атрибутом pk
@@ -238,25 +278,40 @@ class UpdatePage(UpdateView):
 #
 #     return render(request, 'women/index.html', context=data)
 
-class WomenCategory(ListView):
-    #model = Women в этом случае get_queryset не используем, а работаем с моделью целиком
+# class WomenCategory(ListView): #без миксина
+#     #model = Women в этом случае get_queryset не используем, а работаем с моделью целиком
+#     template_name = 'women/index.html'
+#     context_object_name = 'posts'
+#     allow_empty = False #при пустом кверисете context_object_name = 'posts' --> (Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related('cat')) вернется 404
+#     #extra_context = {еще переменные в модель}
+#
+#
+#     def get_context_data(self, *, object_list=None, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         cat = context['posts'][0].cat
+#         context['title'] = 'Категория - ' + cat.name
+#         context['menu'] = menu
+#         context['cat_selected'] = cat.id
+#         return context
+#
+#     def get_queryset(self):
+#         return Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related('cat') #self.kwargs['cat_slug'] - это переменная, определенная в соответствующем маршруте women\urls.py
+
+class WomenCategory(DataMixin, ListView):#с миксином
     template_name = 'women/index.html'
     context_object_name = 'posts'
-    allow_empty = False #при пустом кверисете context_object_name = 'posts' --> (Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related('cat')) вернется 404
-    #extra_context = {еще переменные в модель}
-
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        cat = context['posts'][0].cat
-        context['title'] = 'Категория - ' + cat.name
-        context['menu'] = menu
-        context['cat_selected'] = cat.id
-        return context
+    allow_empty = False
 
     def get_queryset(self):
-        return Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related('cat') #self.kwargs['cat_slug'] - это переменная, определенная в соответствующем маршруте women\urls.py
+        return Women.published.filter(cat__slug=self.kwargs['cat_slug']).select_related("cat")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cat = context['posts'][0].cat
+        return self.get_mixin_context(context,
+                                      title='Категория - ' + cat.name,
+                                      cat_selected=cat.pk,
+                                      )
 
 # def show_tag_postlist(request, tag_slug):
 #     tag = get_object_or_404(TagPost, slug=tag_slug)#возвращает объект tag из модели TagPos по слагу если она есть, или 404
@@ -271,29 +326,41 @@ class WomenCategory(ListView):
 #
 #     return render(request, 'women/index.html', context=data)
 
-class TagPostList(ListView):
+# class TagPostList(ListView): # без миксина
+#     template_name = 'women/index.html'
+#     context_object_name = 'posts'
+#     allow_empty = False
+#
+#     def get_queryset(self):
+#         return Women.published.filter(tags__slug=self.kwargs['tag_slug']).select_related('cat')
+#
+#     # def get_context_data(self, *, object_list=None, **kwargs):
+#     #     context = super().get_context_data(**kwargs)
+#     #     cat = context['posts'][0].cat
+#     #     context['title'] = 'Категория - ' + cat.name
+#     #     context['menu'] = menu
+#     #     context['cat_selected'] = cat.id
+#     #     return context
+#
+#     def get_context_data(self, *, object_list=None, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         my_tag = context['posts'][0].tags.filter(slug=self.kwargs['tag_slug'])[0]
+#         context['title'] = 'Тег: ' + my_tag.tag
+#         context['menu'] = menu
+#         return context
+#with mixin
+class TagPostList(DataMixin, ListView):
     template_name = 'women/index.html'
     context_object_name = 'posts'
     allow_empty = False
 
-    def get_queryset(self):
-        return Women.published.filter(tags__slug=self.kwargs['tag_slug']).select_related('cat')
-
-    # def get_context_data(self, *, object_list=None, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     cat = context['posts'][0].cat
-    #     context['title'] = 'Категория - ' + cat.name
-    #     context['menu'] = menu
-    #     context['cat_selected'] = cat.id
-    #     return context
-
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        my_tag = context['posts'][0].tags.filter(slug=self.kwargs['tag_slug'])[0]
-        context['title'] = 'Тег: ' + my_tag.tag
-        context['menu'] = menu
-        return context
+        tag = TagPost.objects.get(slug=self.kwargs['tag_slug'])
+        return self.get_mixin_context(context, title='Тег: ' + tag.tag)
 
+    def get_queryset(self):
+        return Women.published.filter(tags__slug=self.kwargs['tag_slug']).select_related('cat')
 
 
 
