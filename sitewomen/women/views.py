@@ -86,7 +86,7 @@ class WomenHome(DataMixin, ListView): #с миксином
 #     }
 #
 #     return render(request, 'women/post.html', context=data)
-
+#region ShowPost
 # class ShowPost(DetailView): без миксина
 #     #model = Women
 #     template_name = 'women/post.html'
@@ -101,7 +101,7 @@ class WomenHome(DataMixin, ListView): #с миксином
 #
 #     def get_object(self, queryset=None):# определяем, какой объект нам нельзя брать, а вместо него 404, тогда model = Women не пишем,
 #         return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg]) #здесть передали не модель с фильтром, а МЕНЕДЖЕР, как объект
-
+#endregion
 class ShowPost(DataMixin, DetailView): #с миксином
     template_name = 'women/post.html'
     slug_url_kwarg = 'post_slug'
@@ -111,6 +111,9 @@ class ShowPost(DataMixin, DetailView): #с миксином
         return self.get_mixin_context(super().get_context_data(**kwargs),
                                       title='Главная страница',
                                       cat_selected=0)
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg])
 
 
 
