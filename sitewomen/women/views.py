@@ -52,7 +52,9 @@ class WomenHome(DataMixin, ListView): #с миксином
     context_object_name = 'posts'
     title_page = 'Главная страница'
     cat_selected = 0
-    paginate_by = 3 #классы ListView понимают пагинацию сразу. В шаблон передаются переменные page_obj - объект текущей страницы paginator - объект-пагинатор
+    #на самом деле реализуем пагинацию в миксине, но можно и так:
+    #paginate_by = 3 #классы ListView понимают пагинацию сразу. В шаблон передаются переменные page_obj - объект текущей страницы paginator - объект-пагинатор
+    #потом через шаблон будет передаваться get запрос типа "?page=4" и пагинируемый context_object_name = 'posts' отобразит страницу
 
     def get_queryset(self):
         return Women.published.all().select_related('cat')
