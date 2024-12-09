@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseNotFound, Http404, HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -51,6 +52,7 @@ class WomenHome(DataMixin, ListView): #с миксином
     context_object_name = 'posts'
     title_page = 'Главная страница'
     cat_selected = 0
+    paginate_by = 3 #классы ListView понимают пагинацию сразу. В шаблон передаются переменные page_obj - объект текущей страницы paginator - объект-пагинатор
 
     def get_queryset(self):
         return Women.published.all().select_related('cat')
@@ -142,16 +144,26 @@ def handle_uploaded_file(f):
 #
 #     return render(request, 'women/about.html', {'title': 'О сайте', 'menu': menu, 'form': form})
 
-def about(request):
-    if request.method == "POST":
-        form = UploadFileForm(request.POST, request.FILES) #создаем экземпляр формы
-        if form.is_valid():
-            fp = UploadFiles(file=form.cleaned_data['file']) #создаем экземпляр модели из экзеипляраформы
-            fp.save()
-    else:
-        form = UploadFileForm()
 
-    return render(request, 'women/about.html', {'title': 'О сайте', 'form': form})
+# def about(request): # без пагинации
+#     if request.method == "POST":
+#         form = UploadFileForm(request.POST, request.FILES) #создаем экземпляр формы
+#         if form.is_valid():
+#             fp = UploadFiles(file=form.cleaned_data['file']) #создаем экземпляр модели из экзеипляраформы
+#             fp.save()
+#     else:
+#         form = UploadFileForm()
+#
+#     return render(request, 'women/about.html', {'title': 'О сайте', 'form': form})
+
+def about(request): #с пагинатором
+    contact_list = Women.published.all()
+    paginator = Paginator(contact_list, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'women/about.html', {'page_obj': page_obj, 'title': 'О сайте'})
+
 
 #def categories(request, cat_id): #HttpRequest
 #    return HttpResponse(f"<h1>Статьи по категориям</h1><p>id: {cat_id}</p>")
