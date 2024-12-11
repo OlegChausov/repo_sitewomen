@@ -3,6 +3,7 @@ from django.db.models import Count
 
 import women.views as views
 from women.models import Category, TagPost
+from women.utils import menu
 
 register = template.Library()
 
@@ -24,3 +25,7 @@ def show_categories(cat_selected_id=0):
 def show_all_tags():
     #return {"tags": TagPost.objects.all()}  #переменная "tags" возвращает все объекты модели TagPost
     return {"tags": TagPost.objects.annotate(total=Count("tags")).filter(total__gt=0)} #переменная "tags" возвращает только выборку где у тегов кол-во связанных записей  total__gt=0
+
+@register.simple_tag
+def get_menu():
+    return menu

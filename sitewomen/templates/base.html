@@ -16,6 +16,7 @@
 		<div class="header">
 			<ul id="mainmenu" class="mainmenu">
 			<li class="logo"><a href="{% url 'home' %}"><div class="logo"></div></a></li>
+{% get_menu as menu %}
 {% for m in menu %}
 	{% if not forloop.last %}
 				<li>
