@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseNotFound, Http404, HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render, redirect, get_object_or_404
@@ -158,6 +160,7 @@ def handle_uploaded_file(f):
 #
 #     return render(request, 'women/about.html', {'title': 'О сайте', 'form': form})
 
+@login_required(login_url='/admin/') #login_url='/admin/' также указывается в settings.py, но здесь выше приоритет
 def about(request): #с пагинатором
     contact_list = Women.published.all()
     paginator = Paginator(contact_list, 3)
@@ -257,13 +260,14 @@ def login(request):
 #         'menu': menu,
 #         'title': 'Добавление статьи'}
 
-class AddPage(DataMixin, CreateView):#с миксином
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):#с миксином
     model = Women
     fields = ['title', 'slug', 'content', 'is_published', 'cat']
     # form_class = AddPostForm
     template_name = 'women/addpage.html'
     success_url = reverse_lazy('home')
     title_page = 'Добавление статьи'
+    #login_url = '/admin/' #параметр для LoginRequiredMixin куда попадать если не пустило settings.py\LOGIN_URL = 'users:login', а потом сюда  login_url = '/admin/'
 
 
 # class UpdatePage(UpdateView): #без миксина

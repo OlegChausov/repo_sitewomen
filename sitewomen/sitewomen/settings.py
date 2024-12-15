@@ -70,6 +70,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
+                'users.context_processors.get_women_context',
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -135,3 +136,6 @@ MEDIA_URL = '/media/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = 'home'#переход после авторизации
+LOGOUT_REDIRECT_URL = 'home'#переход после логаута
+LOGIN_URL = 'users:login'#переход для неавторизованных пользователей с закрытых страниц сайта

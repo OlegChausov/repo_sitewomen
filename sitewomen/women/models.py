@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.template.defaultfilters import slugify
@@ -38,6 +39,7 @@ class Women(models.Model):
     #Класс 'Category' указан в виде строки т.к. в виде ссылки его еще может не существовать, н, вообще, если б был создан заранее, то можно передать через ссылку. PTOTECT -это ФУНКЦИЯ!
     tags = models.ManyToManyField('TagPost', blank=True, related_name='tags', verbose_name="Тэги") #on_delete в этом классе отсутствует
     husband = models.OneToOneField('Husband', on_delete=models.SET_NULL, null=True, blank=True, related_name='wuman', verbose_name="Муж")#'wuman' - это алиса для обратногно связывания т.е. из связанного класса получить доступ связанным объектам Women
+    author = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, related_name='posts', null=True, default=None)#get_user_model() ищет в проекте модель user
 
 
     objects = models.Manager() #старый дефолтный менеджер менеджер, существует без объявления класса
