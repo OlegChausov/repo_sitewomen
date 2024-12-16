@@ -269,6 +269,10 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):#с миксином
     title_page = 'Добавление статьи'
     #login_url = '/admin/' #параметр для LoginRequiredMixin куда попадать если не пустило settings.py\LOGIN_URL = 'users:login', а потом сюда  login_url = '/admin/'
 
+    def form_valid(self, form):
+        w = form.save(commit=False) #сразу не сохраняем в БД
+        w.author = self.request.user #в реквесте есть параметр, какой пользователь добавляет статью, тут то и сохраняем
+        return super().form_valid(form)#тут-то и сохраняем
 
 # class UpdatePage(UpdateView): #без миксина
 #     model = Women
