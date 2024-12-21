@@ -37,7 +37,7 @@ class RussianValidator: #создаем свой валидатор
 #     husband = forms.ModelChoiceField(queryset=Husband.objects.all(), empty_label="Не замужем", required=False, label="Муж")
 #
 #     def clean_title(self): # будет вызываться проверка clean_нужное поле формы, это как замена своему классу валидатора. Для использолвания в одном месте
-#         title = self.cleaned_data['title']
+#         title = self.cleaned_data['title'] #все методы с ключевым словом cleaned вызываются автоматически при созадния экземпляра класса формы
 #         ALLOWED_CHARS = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯабвгдеёжзийклмнопрстуфхцчшщбыъэюя0123456789- "
 #         if not (set(title) <= set(ALLOWED_CHARS)):
 #             raise ValidationError("Должны быть только русские символы, дефис и пробел.")
@@ -58,7 +58,7 @@ class AddPostForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'cols': 50, 'rows': 5})}#виджеты с параметрами стилей
         labels = {'slug': 'URL'}#переопределим заголовок с verbouse_name на свой
 
-    def clean_title(self):
+    def clean_title(self): #все методы с ключевым словом cleaned вызываются автоматически при созадния экземпляра класса формы
         title = self.cleaned_data['title']
         if len(title) > 50:
             raise ValidationError('Длина превышает 50 символов')

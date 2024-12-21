@@ -265,7 +265,7 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):#с миксином
     fields = ['title', 'slug', 'content', 'is_published', 'cat']
     # form_class = AddPostForm
     template_name = 'women/addpage.html'
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('home') #это первый приоритет, если указан. 2-й приеоритет - параметр next в шаблоне, это то, с чего попадаешь на форму авторизации, третий приоритет settings.py\LOGIN_URL = 'users:login'
     title_page = 'Добавление статьи'
     #login_url = '/admin/' #параметр для LoginRequiredMixin куда попадать если не пустило settings.py\LOGIN_URL = 'users:login', а потом сюда  login_url = '/admin/'
 

@@ -139,3 +139,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'home'#переход после авторизации
 LOGOUT_REDIRECT_URL = 'home'#переход после логаута
 LOGIN_URL = 'users:login'#переход для неавторизованных пользователей с закрытых страниц сайта
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'users.authentication.EmailAuthBackend',
+]
