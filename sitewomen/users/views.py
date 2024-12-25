@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
+from sitewomen import settings
 from users.forms import LoginUserForm, RegisterUserForm, ProfileUserForm, UserPasswordChangeForm
 
 
@@ -67,7 +68,7 @@ class ProfileUser(LoginRequiredMixin, UpdateView): #UpdateView берет на �
     model = get_user_model()
     form_class = ProfileUserForm
     template_name = 'users/profile.html'
-    extra_context = {'title': "Профиль пользователя"}
+    extra_context = {'title': "Профиль пользователя", 'default_image': settings.DEFAULT_USER_IMAGE}
 
     def get_success_url(self):
         return reverse_lazy('users:profile')
@@ -90,5 +91,5 @@ class UserPasswordChange(PasswordChangeView):
 # PasswordChangeDoneView: Это представление в Django, которое отображает страницу, подтверждающую успешное изменение пароля. Эта страница обычно содержит информацию о том, что пароль был успешно изменен и пользователь может войти с новым паролем.
 
 # OlegChausovTest@yandex.kz gikalo1303 tcjzlwoldhvycpxk - пароль яндексовсой почты для приложения
-
-# OlegChausov olegshak1985@gmail.com gikalo13031
+# OlegChausov OlegChausovTest@yandex.kz 12345678I
+# superuser root root@mail.ru 1234
