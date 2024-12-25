@@ -26,6 +26,7 @@ urlpatterns = [
     #path('cats/<slug:cat_slug>/', views.show_category, name='category'),
     path('category/<slug:cat_slug>/', WomenCategory.as_view(), name='category'),
     #path('tag/<slug:tag_slug>/', views.show_tag_postlist, name='tag',
-    path('edit/<int:pk>/', views.UpdatePage.as_view(), name='edit_page'),
+    #path('edit/<int:pk>/', views.UpdatePage.as_view(), name='edit_page'),
+    path('edit/<slug:slug>/', views.UpdatePage.as_view(), name='edit_page'),
     path('tag/<slug:tag_slug>/', views.TagPostList.as_view(), name='tag',)
 ]

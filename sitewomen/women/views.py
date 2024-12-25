@@ -1,5 +1,5 @@
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseNotFound, Http404, HttpResponseRedirect, HttpResponsePermanentRedirect
 from django.shortcuts import render, redirect, get_object_or_404
@@ -121,10 +121,6 @@ class ShowPost(DataMixin, DetailView): #с миксином
     def get_object(self, queryset=None):
         return get_object_or_404(Women.published, slug=self.kwargs[self.slug_url_kwarg])
 
-
-
-
-
 def handle_uploaded_file(f):
     name = f.name
     ext = ''
@@ -230,6 +226,7 @@ def page_not_found(request, exception):
 #
 #         return render(request, 'women/addpage.html', data)
 #
+@permission_required(perm='women.view_women', raise_exception=True) #Здесь второй параметр raise_exception нужен для генерации кода 403 – доступ запрещен
 def contact(request):
     return HttpResponse("Обратная связь")
 
@@ -260,13 +257,14 @@ def login(request):
 #         'menu': menu,
 #         'title': 'Добавление статьи'}
 
-class AddPage(LoginRequiredMixin, DataMixin, CreateView):#с миксином
+class AddPage(PermissionRequiredMixin, LoginRequiredMixin, DataMixin, CreateView):#с миксином
     model = Women
     fields = ['title', 'slug', 'content', 'is_published', 'cat']
     # form_class = AddPostForm
     template_name = 'women/addpage.html'
     success_url = reverse_lazy('home') #это первый приоритет, если указан. 2-й приеоритет - параметр next в шаблоне, это то, с чего попадаешь на форму авторизации, третий приоритет settings.py\LOGIN_URL = 'users:login'
     title_page = 'Добавление статьи'
+    permission_required = 'women.add_women' #параметр для PermissionRequiredMixin. False/True берется из таблицы разрешений и редактируется в админке. синтаксис <приложение>.<действие>_<таблица>
     #login_url = '/admin/' #параметр для LoginRequiredMixin куда попадать если не пустило settings.py\LOGIN_URL = 'users:login', а потом сюда  login_url = '/admin/'
 
     def form_valid(self, form):
@@ -283,12 +281,13 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):#с миксином
 #         'menu': menu,
 #         'title': 'Редактирование статьи'}
 
-class UpdatePage(DataMixin, UpdateView):#с миксином
+class UpdatePage(PermissionRequiredMixin, DataMixin, UpdateView):#с миксином
     model = Women
     fields = ['title', 'content', 'photo', 'is_published', 'cat']
     template_name = 'women/addpage.html'
     success_url = reverse_lazy('home')
     title_page = 'Редактирование статьи'
+    permission_required = 'women.change_women'  # параметр для PermissionRequiredMixin. False/True берется из таблицы разрешений и редактируется в админке. синтаксис <приложение>.<действие>_<таблица>
 
 # def show_category(request, cat_slug):
 #     category = get_object_or_404(Category, slug=cat_slug) #ищем по модели Category, поле slug, 404 поднимается, если не найдено. Потом ту строчку (объект), что нашли возрващаем в posts = Women.published.filter(cat_id=category.pk) с атрибутом pk
