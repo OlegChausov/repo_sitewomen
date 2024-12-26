@@ -32,6 +32,7 @@ urlpatterns = [
     path('', include('women.urls')),
     path('users/', include('users.urls', namespace="users")), #namespace - пространство имен, это дополнительно на свяк случай указывает, что эти URL работают только для приложения users
     path("__debug__/", include("debug_toolbar.urls")),
+    path('social-auth/', include('social_django.urls', namespace='social')),
 ]
 
 if settings.DEBUG:

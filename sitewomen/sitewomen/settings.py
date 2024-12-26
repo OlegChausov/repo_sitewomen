@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'women.apps.WomenConfig',
     'users.apps.UsersConfig',
     'debug_toolbar',
+    'social_django',
 ]
 
 MIDDLEWARE = [
@@ -141,8 +142,16 @@ LOGOUT_REDIRECT_URL = 'home'#переход после логаута
 LOGIN_URL = 'users:login'#переход для неавторизованных пользователей с закрытых страниц сайта
 
 AUTHENTICATION_BACKENDS = [
+    'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
     'users.authentication.EmailAuthBackend',
+    #'social_core.backends.open_id.OpenIdAuth',
+    #'social_core.backends.google.GoogleOpenId',
+    #'social_core.backends.google.GoogleOAuth2',
+    #'social_core.backends.google.GoogleOAuth',
+    #'social_core.backends.twitter.TwitterOAuth',
+    #'social_core.backends.yahoo.YahooOpenId',
+    ...
 ]
 
 #EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend" по умолчанию, используется SMTP почтовый бэкенд, но пропишем его явно
@@ -163,3 +172,5 @@ EMAIL_ADMIN = EMAIL_HOST_USER
 AUTH_USER_MODEL = 'users.User' #было auth.User, заменили на свою, расширенную модель
 
 DEFAULT_USER_IMAGE = MEDIA_URL + 'users/default.png'
+
+#SOCIAL_AUTH_JSONFIELD_ENABLED = True Для БД PostgesSQL
